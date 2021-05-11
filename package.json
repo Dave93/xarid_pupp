@@ -18,6 +18,13 @@
   },
   "homepage": "https://github.com/hellosurbhi/puppeteer-starter-code#readme",
   "dependencies": {
+    "cron": "^1.8.2",
+    "currency.js": "^2.0.3",
+    "node-fetch": "^2.6.1",
+    "parse-money": "^1.0.12",
     "puppeteer": "^5.5.0"
+  },
+  "devDependencies": {
+    "pending-xhr-puppeteer": "^2.3.3"
   }
 }
