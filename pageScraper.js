@@ -45,7 +45,7 @@ const scraperObject = {
       //Enter following code here
 
       await pendingXHR.waitForAllXhrFinished();
-      await asyncForEach(responseData, (keyword) => {
+      await asyncForEach(responseData, async (keyword) => {
         await page.$eval("#Filter_LotID", (node) => (node.value = keyword));
 
         await page.$eval("#Filter_TypeID", (node) => (node.value = 1));
