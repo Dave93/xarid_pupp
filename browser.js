@@ -8,7 +8,7 @@ async function startBrowser() {
     //Return an instance of the browser
     browser = await puppeteer.launch({
       // headless: false,
-      args: ["--disable-setuid-sandbox"],
+      args: ["--disable-setuid-sandbox", "--no-sandbox"],
       ignoreHTTPSErrors: true,
       // devtools: true,
     });

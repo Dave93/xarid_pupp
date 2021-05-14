@@ -37,16 +37,20 @@ const scraperObject = {
 
     const { data: responseData } = await response.json();
 
-    console.log(responseData);
 
     await asyncForEach(links, async (link) => {
-      await page.goto(link);
+      const response = await page.goto(link);
       // await page.waitForTimeout(5000);
       //Enter following code here
 
       await pendingXHR.waitForAllXhrFinished();
-      await asyncForEach(responseData, async (keyword) => {
-        await page.$eval("#Filter_LotID", (node) => (node.value = keyword));
+
+//	  console.log(responseData);
+      await asyncForEach(responseData.result, async (keyword) => {
+    	  const title = keyword.UF_TITLE;
+        await page.$eval("#Filter_LotID", (node, title) => {
+        	return node.value = title;
+    	}, title);
 
         await page.$eval("#Filter_TypeID", (node) => (node.value = 1));
         // lotActiveFilter.value = 1;
@@ -80,7 +84,7 @@ const scraperObject = {
         if (!errorModalIsVisible) {
           let rows = await page.evaluate(() => {
             const table = document.querySelector("#table_main");
-            const rows = table.tBodies[0].rows;
+            const rows = (table.tBodies[0] ? table.tBodies[0].rows : []);
             const result = [...rows].map((row) => {
               const item = {};
               const cells = row.cells;
@@ -109,6 +113,9 @@ const scraperObject = {
             row.price = currency(price).value;
             return row;
           });
+          
+          console.log(rows);
+          
           const data = JSON.stringify({
             method: "set.lots",
             data: {
