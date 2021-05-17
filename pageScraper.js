@@ -1,6 +1,7 @@
 const { PendingXHR } = require("pending-xhr-puppeteer");
 const currency = require("currency.js");
 const nodeFetch = require("node-fetch");
+const path = require("path");
 
 const links = [
   "https://exarid.uzex.uz/ru/competitive",
@@ -13,6 +14,12 @@ const asyncForEach = async (array, callback) => {
     await callback(array[index], index, array);
   }
 };
+
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min; //Максимум и минимум включаются
+}
 
 const scraperObject = {
   //Change url to link you're scraping from
@@ -37,7 +44,6 @@ const scraperObject = {
 
     const { data: responseData } = await response.json();
 
-
     await asyncForEach(links, async (link) => {
       const response = await page.goto(link);
       // await page.waitForTimeout(5000);
@@ -45,25 +51,48 @@ const scraperObject = {
 
       await pendingXHR.waitForAllXhrFinished();
 
-//	  console.log(responseData);
+      //	  console.log(responseData);
       await asyncForEach(responseData.result, async (keyword) => {
-    	  const title = keyword.UF_TITLE;
-        await page.$eval("#Filter_LotID", (node, title) => {
-        	return node.value = title;
-    	}, title);
+        const title = keyword.UF_TITLE;
+        const filterToggle = await page.$(".filter_toggle");
+        const togglerId = await page.$$eval(".filter_toggle", (el) => {
+          console.log(el);
+          return el.map((item) => item.getAttribute("id"));
+        });
+        if (!togglerId[0]) {
+          await filterToggle.click();
+        }
+
+        await page.waitForTimeout(300);
+        await page.$eval(
+          "#Filter_LotID",
+          (node, title) => {
+            return (node.value = title);
+          },
+          title
+        );
 
         await page.$eval("#Filter_TypeID", (node) => (node.value = 1));
         // lotActiveFilter.value = 1;
-
-        const filterToggle = await page.$(".filter_toggle");
-        await filterToggle.click();
 
         const filterSubmitButton = await page.$(".confirm_filter");
         await filterSubmitButton.click();
 
         await pendingXHR.waitForAllXhrFinished();
 
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(500);
+        await page.setViewport({
+          width: 1920,
+          height: 1080,
+          deviceScaleFactor: 1,
+        });
+
+        const screenPath = path.join(
+          __dirname,
+          "screens/" + getRandomIntInclusive(1000, 9999) + ".png"
+        );
+
+        // await page.screenshot({ path: screenPath, fullPage: true });
 
         const errorModalIsVisible = await page.evaluate(() => {
           const element = document.querySelector(".sa-error.animateErrorIcon");
@@ -84,7 +113,7 @@ const scraperObject = {
         if (!errorModalIsVisible) {
           let rows = await page.evaluate(() => {
             const table = document.querySelector("#table_main");
-            const rows = (table.tBodies[0] ? table.tBodies[0].rows : []);
+            const rows = table.tBodies[0] ? table.tBodies[0].rows : [];
             const result = [...rows].map((row) => {
               const item = {};
               const cells = row.cells;
@@ -113,9 +142,9 @@ const scraperObject = {
             row.price = currency(price).value;
             return row;
           });
-          
+
           console.log(rows);
-          
+
           const data = JSON.stringify({
             method: "set.lots",
             data: {
@@ -123,14 +152,14 @@ const scraperObject = {
             },
           });
 
-          const response = await nodeFetch("https://prouniforma.uz/api/", {
-            method: "POST",
-            body: data,
-            headers: {
-              "Content-Type": "application/json",
-              ApiToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-            },
-          });
+          // const response = await nodeFetch("https://prouniforma.uz/api/", {
+          //   method: "POST",
+          //   body: data,
+          //   headers: {
+          //     "Content-Type": "application/json",
+          //     ApiToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          //   },
+          // });
         }
       });
     });
