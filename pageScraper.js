@@ -4,6 +4,7 @@ const nodeFetch = require("node-fetch");
 const path = require("path");
 
 const links = [
+  "https://exarid.uzex.uz/",
   "https://exarid.uzex.uz/ru/competitive",
   "https://exarid.uzex.uz/ru/bestoffer",
   "https://exarid.uzex.uz/ru/tender2",
@@ -54,9 +55,17 @@ const scraperObject = {
       //	  console.log(responseData);
       await asyncForEach(responseData.result, async (keyword) => {
         const title = keyword.UF_TITLE;
+
+        try {
+          const modalConfirm = await page.$(
+            ".sa-confirm-button-container .confirm"
+          );
+          await modalConfirm.click();
+
+          await page.waitForTimeout(300);
+        } catch (e) {}
         const filterToggle = await page.$(".filter_toggle");
         const togglerId = await page.$$eval(".filter_toggle", (el) => {
-          console.log(el);
           return el.map((item) => item.getAttribute("id"));
         });
         if (!togglerId[0]) {
@@ -72,7 +81,9 @@ const scraperObject = {
           title
         );
 
-        await page.$eval("#Filter_TypeID", (node) => (node.value = 1));
+        try {
+          await page.$eval("#Filter_TypeID", (node) => (node.value = 1));
+        } catch (e) {}
         // lotActiveFilter.value = 1;
 
         const filterSubmitButton = await page.$(".confirm_filter");
@@ -152,14 +163,14 @@ const scraperObject = {
             },
           });
 
-          // const response = await nodeFetch("https://prouniforma.uz/api/", {
-          //   method: "POST",
-          //   body: data,
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //     ApiToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-          //   },
-          // });
+          const response = await nodeFetch("https://prouniforma.uz/api/", {
+            method: "POST",
+            body: data,
+            headers: {
+              "Content-Type": "application/json",
+              ApiToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+            },
+          });
         }
       });
     });
